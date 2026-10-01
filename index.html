@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#5b5bd6"><meta name="description" content="Gadget Tanpa Drama — Family Digital Routine System untuk membangun rutinitas digital keluarga selama 14 hari dan menghasilkan Family Digital Blueprint.">
+<link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png">
+<title>Gadget Tanpa Drama</title><link rel="stylesheet" href="styles.css"></head>
+<body><div id="gtd-start-error" style="display:none;background:#fff1f2;color:#9f1239;border:1px solid #fecdd3;padding:12px 16px;font-family:system-ui;position:relative;z-index:9999"></div>
+<script>
+(function(){
+  window.__GTD_START_ERRORS__=[];
+  window.addEventListener('error', function(e){
+    window.__GTD_START_ERRORS__.push(e.message||'Unknown error');
+    var el=document.getElementById('gtd-start-error');
+    if(el){el.style.display='block';el.textContent='Aplikasi mengalami kendala saat dibuka: '+(e.message||'kesalahan tidak diketahui')+'. Coba buka dengan Chrome/Edge. Jika file masih berada di dalam ZIP, ekstrak ZIP terlebih dahulu.';}
+  });
+  try {
+    localStorage.setItem('__gtd_test__','1');
+    localStorage.removeItem('__gtd_test__');
+  } catch(e) {
+    document.addEventListener('DOMContentLoaded',function(){
+      var el=document.getElementById('gtd-start-error');
+      if(el){el.style.display='block';el.textContent='Browser ini memblokir penyimpanan lokal untuk file ini. Gunakan versi hosting-ready di website HTTPS, atau buka file setelah diekstrak dengan Chrome/Edge.';}
+    });
+  }
+})();
+</script>
+
+<header class="topbar"><div><div class="brand">Gadget Tanpa Drama</div><div class="tag">Family Digital Routine System • local-first • tanpa login</div></div><div class="row"><button class="ghost" id="saveJourneyBtn">Simpan Perjalanan</button><button class="ghost" id="reportBtn">Unduh Laporan PDF</button></div></header>
+<div class="shell"><nav id="nav">
+<button data-view="home" class="active">🏠 Dashboard</button>
+<button data-view="checkup">🧭 Digital Check-Up</button>
+<button data-view="journey">🗓️ 14-Day Reset</button>
+<button data-view="blueprint">🧩 Family Digital Blueprint</button>
+<button data-view="today">⏱️ Today Mode</button>
+<button data-view="watch">▶️ Boleh Nonton Apa?</button>
+<button data-view="activity">🎨 Habis Nonton Ngapain?</button>
+<button data-view="log">📈 Log & Pattern</button>
+<button data-view="data">💾 Data & Perangkat</button>
+<button data-view="sources">📚 Sumber & Batasan</button>
+</nav><main id="app"></main></div>
+<footer>Data keluarga tersimpan di browser/perangkat ini. Simpan file perjalanan (.gtd) secara berkala agar progres dapat dipulihkan atau dipindahkan ke perangkat lain.</footer>
+<script src="data.js"></script><script src="app.js"></script></body></html>
