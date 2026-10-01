@@ -1,0 +1,23 @@
+GADGET TANPA DRAMA — LAUNCH UX FIX v2
+
+1. Di repository GitHub, upload/replace SEMUA file dari folder ini ke root repository.
+2. Pastikan index.html, app.js, data.js, styles.css, sw.js, manifest.json dan icon berada langsung di root.
+3. Commit changes.
+4. Vercel yang terhubung ke repository akan deploy otomatis.
+5. Setelah deployment selesai, buka website lalu hard refresh sekali (Ctrl+Shift+R).
+
+PENTING:
+- Key localStorage TIDAK DIUBAH: gtd_state_final_local_v1
+- Jadi progres pengguna versi sebelumnya tetap terbaca pada domain yang sama.
+- Service worker sudah diubah menjadi network-first supaya revisi berikutnya lebih cepat muncul setelah deploy.
+
+Perbaikan v2:
+- Mulai Program membuka Hari 1 langsung, tanpa dialog konfirmasi yang membingungkan.
+- Onboarding 4 langkah.
+- Dashboard punya CTA langkah berikutnya, bukan deretan angka 0 saja.
+- Tombol Edit Family Digital Plan jelas.
+- Toast konfirmasi setelah save.
+- Watch Library menampilkan jumlah hasil dan tombol reset filter.
+- Data/backup memakai bahasa nonteknis + tombol Pulihkan di topbar.
+- Navigasi dikelompokkan.
+- Service worker diperbaiki agar update GitHub/Vercel tidak tertahan cache lama.
