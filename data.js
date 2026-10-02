@@ -788,9 +788,9 @@ window.GTD_DATA = {
     },
     {
       "id": "id-kastari-warna-ella",
-      "title": "Kastari — Mengenal Warna bersama Ella Ello",
+      "title": "Kastari — Mengenal Bentuk dan Warna 6: Warna bersama Diva",
       "platform": "YouTube",
-      "url": "https://www.youtube.com/watch?v=xY5AvbkZ9n4",
+      "url": "https://www.youtube.com/watch?v=IVxd7og0tgc",
       "age_min": 3,
       "age_max": 5,
       "themes": [
@@ -811,9 +811,9 @@ window.GTD_DATA = {
     },
     {
       "id": "id-kastari-baca-paud1",
-      "title": "Kastari — Belajar Membaca Anak PAUD 1 bersama Lala",
+      "title": "Kastari — Menghafal Angka Latin HD Part 1",
       "platform": "YouTube",
-      "url": "https://www.youtube.com/watch?v=gKbCh7Y9bB8",
+      "url": "https://www.youtube.com/watch?v=93yjY-LckZA",
       "age_min": 3,
       "age_max": 6,
       "themes": [
@@ -823,12 +823,12 @@ window.GTD_DATA = {
       "minutes": null,
       "channel": "Kastari Sentra",
       "status": "Watch page resmi aktif; ditinjau 2026-10-02",
-      "why": "Seri prasekolah Bahasa Indonesia untuk mengenal angka 1–10 dengan pendampingan orang tua.",
+      "why": "Seri kartun pendidikan prasekolah Bahasa Indonesia untuk mengenal angka 1–10.",
       "talk": [
-        "Bunyi atau huruf apa yang kamu ingat?",
-        "Ada benda di rumah yang bunyi awalnya sama?"
+        "Angka berapa yang paling kamu ingat?",
+        "Bisa tunjukkan jumlah itu dengan benda di rumah?"
       ],
-      "do": "Pilih satu bunyi/huruf lalu cari dua benda di rumah yang cocok.",
+      "do": "Ambil lima benda kecil yang aman, lalu hitung bersama satu per satu.",
       "source": "Kastari Sentra — watch page resmi"
     },
     {
