@@ -823,7 +823,7 @@ window.GTD_DATA = {
       "minutes": null,
       "channel": "Kastari Sentra",
       "status": "Watch page resmi aktif; ditinjau 2026-10-02",
-      "why": "Konten PAUD Bahasa Indonesia untuk pengenalan awal membaca; lebih cocok dengan pendampingan orang tua untuk anak yang lebih kecil.",
+      "why": "Seri prasekolah Bahasa Indonesia untuk mengenal angka 1–10 dengan pendampingan orang tua.",
       "talk": [
         "Bunyi atau huruf apa yang kamu ingat?",
         "Ada benda di rumah yang bunyi awalnya sama?"
