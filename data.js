@@ -111,6 +111,13 @@ window.GTD_DATA = {
       "year": "-",
       "url": "https://quran.com/66/6",
       "use": "Tanggung jawab keluarga untuk pendidikan dan penjagaan nilai."
+    },
+    {
+      "id": "KASTARI",
+      "name": "Kastari Sentra — kanal resmi konten PAUD Indonesia",
+      "year": "ditinjau 2026-10-02",
+      "url": "https://www.youtube.com/@kastarisentra",
+      "use": "Pilihan video Bahasa Indonesia untuk anak prasekolah. Setiap video tetap ditautkan per watch page dan disarankan dipreview orang tua."
     }
   ],
   "journey": [
@@ -707,9 +714,123 @@ window.GTD_DATA = {
       "Peralatan aman",
       "Kemandirian",
       "Pilih satu tugas kecil: menyusun sepatu, lap meja, memilah pakaian, atau menyiapkan tas."
+    ],
+    [
+      "Detektif Emosi",
+      "3-5",
+      "7",
+      "Indoor",
+      "Kertas + pensil opsional",
+      "Sosial-emosional",
+      "Pilih satu ekspresi wajah, tirukan bersama, lalu ceritakan satu situasi sederhana yang pernah membuat perasaan itu muncul."
+    ],
+    [
+      "Toko-tokoan Mini",
+      "3-6",
+      "15",
+      "Indoor",
+      "Benda rumah aman",
+      "Imajinasi",
+      "Buat toko pura-pura dengan 3-5 benda. Bergantian menjadi penjual dan pembeli sambil berlatih memilih, menghitung, dan berbicara."
+    ],
+    [
+      "Misi Rapikan Meja",
+      "3-7",
+      "7",
+      "Indoor",
+      "Lap + benda aman",
+      "Kemandirian",
+      "Pilih satu area kecil. Anak memindahkan benda ke tempatnya lalu membantu mengelap permukaan dengan aman."
+    ],
+    [
+      "Jejak Warna dan Bentuk",
+      "3-5",
+      "10",
+      "Indoor",
+      "Kertas opsional",
+      "Observasi",
+      "Cari tiga warna dan dua bentuk di rumah. Tunjuk atau gambar temuan lalu sebutkan bersama."
+    ],
+    [
+      "Cerita Transisi Gadget",
+      "3-6",
+      "5",
+      "Indoor",
+      "Tanpa alat",
+      "Bahasa",
+      "Buat cerita singkat empat langkah: mulai nonton, dapat warning, layar selesai, lalu memilih kegiatan berikutnya. Anak membantu menentukan akhir cerita."
     ]
   ],
   "watch": [
+    {
+      "id": "id-kastari-bentuk-warna",
+      "title": "Kastari — Mengenal Bentuk dan Warna",
+      "platform": "YouTube",
+      "url": "https://www.youtube.com/watch?v=eI5baLnomuI",
+      "age_min": 3,
+      "age_max": 5,
+      "themes": [
+        "Literasi & Bahasa",
+        "Numerasi & Logika",
+        "Kreativitas & Problem Solving"
+      ],
+      "language": "Bahasa Indonesia",
+      "minutes": null,
+      "channel": "Kastari Sentra",
+      "status": "Watch page resmi aktif; ditinjau 2026-10-02",
+      "why": "Video prasekolah Bahasa Indonesia untuk mengenal bentuk dasar dan warna bersama karakter anak.",
+      "talk": [
+        "Bentuk apa yang paling kamu ingat?",
+        "Bisa cari benda di rumah dengan warna yang sama?"
+      ],
+      "do": "Pilih satu warna lalu cari lima benda dengan warna itu dan hitung bersama.",
+      "source": "Kastari Sentra — watch page resmi"
+    },
+    {
+      "id": "id-kastari-warna-ella",
+      "title": "Kastari — Mengenal Warna bersama Ella Ello",
+      "platform": "YouTube",
+      "url": "https://www.youtube.com/watch?v=xY5AvbkZ9n4",
+      "age_min": 3,
+      "age_max": 5,
+      "themes": [
+        "Literasi & Bahasa",
+        "Kreativitas & Problem Solving"
+      ],
+      "language": "Bahasa Indonesia",
+      "minutes": null,
+      "channel": "Kastari Sentra",
+      "status": "Watch page resmi aktif; ditinjau 2026-10-02",
+      "why": "Pengenalan warna dalam Bahasa Indonesia dengan format ringan untuk anak kecil.",
+      "talk": [
+        "Warna apa yang kamu lihat?",
+        "Di rumah kita ada benda warna itu di mana?"
+      ],
+      "do": "Buat perburuan warna: cari tiga benda dengan satu warna pilihan.",
+      "source": "Kastari Sentra — watch page resmi"
+    },
+    {
+      "id": "id-kastari-baca-paud1",
+      "title": "Kastari — Belajar Membaca Anak PAUD 1 bersama Lala",
+      "platform": "YouTube",
+      "url": "https://www.youtube.com/watch?v=gKbCh7Y9bB8",
+      "age_min": 3,
+      "age_max": 6,
+      "themes": [
+        "Literasi & Bahasa"
+      ],
+      "language": "Bahasa Indonesia",
+      "minutes": null,
+      "channel": "Kastari Sentra",
+      "status": "Watch page resmi aktif; ditinjau 2026-10-02",
+      "why": "Konten PAUD Bahasa Indonesia untuk pengenalan awal membaca; lebih cocok dengan pendampingan orang tua untuk anak yang lebih kecil.",
+      "talk": [
+        "Bunyi atau huruf apa yang kamu ingat?",
+        "Ada benda di rumah yang bunyi awalnya sama?"
+      ],
+      "do": "Pilih satu bunyi/huruf lalu cari dua benda di rumah yang cocok.",
+      "source": "Kastari Sentra — watch page resmi"
+    },
     {
       "id": "id-vicky-sabun",
       "title": "Kelas Vicky & Poppi — Eksperimen Sabun vs Lada",
