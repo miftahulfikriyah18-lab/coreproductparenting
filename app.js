@@ -81,11 +81,18 @@ const STARTER_LAB=[
   {id:'capable',icon:'🌱',title:'Rasa mampu',scenario:'Anak akhirnya menemukan lima benda merah setelah sempat kesulitan.',choices:['“Pintar banget!”','“Tadi baru ketemu tiga, lalu kamu cari lagi sampai dapat lima. Yuk kita hitung bersama.”','“Nah, kan sebenarnya gampang.”'],best:1,feedback:'Respons yang menyebut usaha, strategi, pilihan, atau kontribusi membantu anak memahami apa yang ia lakukan—bukan hanya mengejar label “pintar”.'}
 ];
 function starterDone(){return Object.keys(state.starter?.answers||{}).length>=STARTER_LAB.length}
-function starterChoice(id,idx){state.starter=state.starter||{answers:{}};state.starter.answers=state.starter.answers||{};state.starter.answers[id]=idx;save();renderStarter();}
+function starterChoice(id,idx){state.starter=state.starter||{answers:{}};state.starter.answers=state.starter.answers||{};state.starter.answers[id]=idx;state.starter.reviewId=id;save();renderStarter();}
+function starterNext(){if(state.starter)state.starter.reviewId=null;save();renderStarter();}
 function resetStarter(){state.starter={answers:{}};save();renderStarter();}
 function renderStarter(){
   if(!profileReady())return renderOnboard();
-  const ans=state.starter?.answers||{}; const done=Object.keys(ans).length; const current=STARTER_LAB.find(s=>ans[s.id]===undefined);
+  const ans=state.starter?.answers||{}; const done=Object.keys(ans).length; const reviewId=state.starter?.reviewId;
+  if(reviewId){
+    const s=STARTER_LAB.find(z=>z.id===reviewId),chosen=ans[reviewId],aligned=chosen===s.best;
+    app.innerHTML='<div class="row space"><div><span class="pill">'+done+'/7 selesai</span><h1>Parenting Starter Lab</h1></div></div><section class="card starter-card"><div class="starter-icon">'+s.icon+'</div><div class="label">'+esc(s.title)+'</div><h2>'+(aligned?'Respons ini paling sejalan dengan arah latihan':'Ada respons yang lebih sejalan dengan arah latihan')+'</h2><div class="scenario">'+esc(s.scenario)+'</div><div class="starter-feedback '+(aligned?'good':'learn')+'"><b>Pilihanmu:</b> '+esc(s.choices[chosen])+'<br><br><b>Kenapa?</b> '+esc(s.feedback)+'</div><button class="primary" style="margin-top:16px" onclick="starterNext()">'+(done>=STARTER_LAB.length?'Lihat ringkasan →':'Lanjut skenario berikutnya →')+'</button></section>';
+    return;
+  }
+  const current=STARTER_LAB.find(s=>ans[s.id]===undefined);
   if(!current){
     app.innerHTML='<section class="card hero starter-complete"><span class="pill ok">7/7 selesai</span><h1>Parenting Starter Lab selesai</h1><p class="sub">Kamu sudah melihat tujuh situasi inti. Prinsipnya tidak perlu dihafal—aplikasi akan memunculkannya lagi saat relevan di timer, check-in, aktivitas, dan AI Coach.</p><div class="starter-summary">'+STARTER_LAB.map(s=>'<div><span>'+s.icon+'</span><b>'+esc(s.title)+'</b></div>').join('')+'</div><div class="row" style="margin-top:18px"><button class="primary" onclick="nav(\'checkup\')">Lanjut Family Digital Check-Up →</button><button class="ghost" onclick="resetStarter()">Ulangi Starter Lab</button></div><div class="small" style="margin-top:14px">Microlearning ini dirumuskan ulang dari materi parenting berlisensi milik pemilik produk dan sumber perkembangan/pengasuhan yang dicantumkan di menu Sumber & Batasan; bukan salinan video, slide, atau transkrip.</div></section>';
     return;
@@ -134,7 +141,7 @@ function renderOnboard(){
 }
 function renderCheckup(){
   if(!profileReady())return renderOnboard();
-  const c=state.checkup||{},sg=selectedGoals(),sm=selectedMoments();
+  const c=state.checkup||{},sg=selectedGoals(),sm=selectedMoments(),otherMoment=sm.find(m=>!MOMENT_OPTIONS.includes(m))||'';
   app.innerHTML=`<div class="row space"><div><h1>Family Digital Check-Up</h1><p class="sub">Masalah boleh lebih dari satu. Tujuan juga boleh lebih dari satu. Sistem hanya meminta satu prioritas agar perubahan tetap realistis.</p></div>${(c.priorityGoal||c.goal)?'<span class="pill ok">Plan tersimpan</span>':''}</div>
   <form class="card" onsubmit="event.preventDefault();saveCheckup(this)">
   <div class="grid two"><div><label>Rata-rata screen time hiburan saat ini <span class="optional">(menit/hari)</span></label><input type="number" name="baseline" min="0" value="${c.baseline||''}" placeholder="Contoh: 120"></div><div><label>Target keluarga saat ini <span class="optional">(opsional)</span></label><input type="number" name="target" min="0" value="${c.target||''}" placeholder="Boleh dikosongkan"></div></div>
@@ -143,7 +150,7 @@ function renderCheckup(){
   <label style="margin-top:16px">Kalau harus mulai dari satu dulu, fokus minggu ini apa?</label><select name="priorityGoal">${GOAL_OPTIONS.map(([v,l])=>`<option value="${v}" ${(c.priorityGoal||c.goal||sg[0])===v?'selected':''}>${esc(l)}</option>`).join('')}</select>
   <label style="margin-top:16px">Kapan masalah layar biasanya muncul? <span class="optional">boleh pilih beberapa</span></label>
   ${momentGrid(sm)}
-  <label>Ada momen lain?</label><input name="hardOther" placeholder="Contoh: saat perjalanan jauh, ketika ada tamu...">
+  <label>Ada momen lain?</label><input name="hardOther" value="${esc(otherMoment)}" placeholder="Contoh: saat perjalanan jauh, ketika ada tamu...">
   <div class="grid two"><div><label>Waktu Bebas Layar Pertama yang paling realistis</label><select name="anchor"><option ${c.anchor==='Meja makan'?'selected':''}>Meja makan</option><option ${c.anchor==='30-60 menit sebelum tidur'?'selected':''}>30-60 menit sebelum tidur</option><option ${c.anchor==='Waktu ibadah/kebersamaan'?'selected':''}>Waktu ibadah/kebersamaan</option><option ${c.anchor==='Saat belajar/tugas'?'selected':''}>Saat belajar/tugas</option></select></div><div><label>Aktivitas offline yang biasanya disukai</label><input name="fav" value="${esc(c.fav||'')}" placeholder="Main bersama, menggambar, sepeda..."></div></div>
   <label>Kebiasaan HP orang tua saat bersama anak</label><select name="parentHabit"><option ${c.parentHabit==='Jarang'?'selected':''}>Jarang</option><option ${c.parentHabit==='Kadang'?'selected':''}>Kadang</option><option ${c.parentHabit==='Sering'?'selected':''}>Sering</option><option ${c.parentHabit==='Belum tahu'?'selected':''}>Belum tahu</option></select>
   <div class="notice" style="margin-top:14px"><b>Kenapa pilih satu prioritas?</b> Semua masalah tetap tersimpan. Satu prioritas hanya membantu keluarga menguji perubahan yang cukup kecil untuk diamati.</div>
