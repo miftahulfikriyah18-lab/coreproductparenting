@@ -35,3 +35,7 @@
 .timer{margin:16px 0 6px}.timer+ .small{margin-top:6px}
 @media(max-width:850px){.choice-grid,.starter-summary{grid-template-columns:1fr}.filters-3{grid-template-columns:1fr}.session-metrics{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.session-metrics{grid-template-columns:1fr 1fr}.quick-actions{display:grid;grid-template-columns:1fr}.mode-tabs{display:grid;grid-template-columns:1fr 1fr}.mode-tabs button{border-radius:12px}}
+
+.starter-feedback{border-radius:14px;padding:15px;line-height:1.55;margin-top:14px}.starter-feedback.good{background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}.starter-feedback.learn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
+.capacity-buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.capacity-buttons button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;font-weight:750;cursor:pointer}.capacity-buttons button.active{background:#eef2ff;border-color:#a5b4fc;color:#3730a3}.capacity-guidance{margin-top:12px;background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px}
+@media(max-width:600px){.capacity-buttons{grid-template-columns:repeat(2,1fr)}}
