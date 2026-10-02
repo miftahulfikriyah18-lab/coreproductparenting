@@ -149,7 +149,6 @@ function renderCheckup(){
   <div class="notice" style="margin-top:14px"><b>Kenapa pilih satu prioritas?</b> Semua masalah tetap tersimpan. Satu prioritas hanya membantu keluarga menguji perubahan yang cukup kecil untuk diamati.</div>
   <div class="row" style="margin-top:16px"><button class="primary">${(c.priorityGoal||c.goal)?'Perbarui Family Digital Plan':'Simpan Family Digital Plan'}</button><button type="button" class="ghost" onclick="nav('home')">Kembali</button></div></form>`;
 }
-function formatDateID(
 function formatDateID(iso){if(!iso)return '-';return new Date(iso).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});} function programEndDate(){if(!state.journeyStartedAt)return null;const d=new Date(state.journeyStartedAt);d.setDate(d.getDate()+13);return d.toISOString();}
 function renderJourney(){if(!profileReady())return renderOnboard();const done=completedDays();if(!state.journeyStartedAt){app.innerHTML=`<section class="card hero"><span class="pill">14 hari → 1 output nyata</span><h1>Bangun Family Digital Blueprint</h1><p class="sub">Empat belas hari ini adalah fase uji keluarga. Tidak perlu mengubah semuanya sekaligus—cukup satu langkah kecil per hari.</p><div class="grid three"><div class="card"><h3>Hari 1–4</h3><p>Kenali pola & konteks.</p></div><div class="card"><h3>Hari 5–10</h3><p>Uji aturan, transisi, konten, dan aktivitas.</p></div><div class="card"><h3>Hari 11–14</h3><p>Pilih yang bekerja dan susun sistem keluarga.</p></div></div><div class="notice success" style="margin-top:16px"><b>Begitu tombol di bawah ditekan, Hari 1 langsung terbuka hari ini.</b> Hari berikutnya terbuka sesuai tanggal. Blueprint terbuka pada hari kalender ke-14 walaupun ada hari yang terlewat.</div><br><button class="primary big-cta" onclick="startJourney()">Mulai Hari 1 Sekarang →</button></section>`;return;}const cur=currentProgramDay();const ready=blueprintReady();app.innerHTML=`<div class="row space"><div><h1>14-Day Digital Reset</h1><p class="sub">Mulai ${formatDateID(state.journeyStartedAt)} • Blueprint terbuka ${formatDateID(programEndDate())}</p></div><span class="pill ok">${done}/14 tersimpan</span></div><div class="journey-status"><div><span class="label">Hari program</span><strong>${cur}</strong></div><div><span class="label">Hari yang bisa diisi</span><strong>1–${cur}</strong></div><div><span class="label">Blueprint</span><strong>${ready?'Terbuka':'Hari 14'}</strong></div></div><div class="notice ${ready?'success':''}" style="margin-bottom:14px">${ready?'<b>Fase 14 hari sudah selesai.</b> Semua hari kini terbuka dan Blueprint sudah aktif.':`<b>Hari ${cur} aktif.</b> Hari yang terlewat tetap bisa diisi. Hari berikutnya terbuka otomatis besok.`}</div><div class="grid">${D.journey.map(d=>{const unlocked=dayUnlocked(d[0]);const doneDay=!!state.days[d[0]];const note=state.journeyNotes[d[0]]||'';return `<div class="card day ${doneDay?'done':''} ${unlocked?'':'locked'}"><div class="daynum">${d[0]}</div><div><div class="row principle-day"><h3>${esc(d[1])}</h3><span class="principle-tag">${principleForDay(d[0]).icon} ${principleForDay(d[0]).title}</span></div><p>${esc(d[2])}</p><div class="quote"><b>Aksi:</b> ${esc(d[3])}</div><div class="small" style="margin-top:8px">Basis: ${esc(d[4])}</div>${unlocked?`<label style="margin-top:12px">Catatan untuk Blueprint</label><textarea id="daynote${d[0]}" placeholder="${esc(D.journeyPrompts[d[0]])}">${esc(note)}</textarea><div class="row"><button class="${doneDay?'ghost':'primary'}" onclick="saveDay(${d[0]})">${doneDay?'Perbarui catatan':'Simpan Hari '+d[0]}</button>${doneDay?'<span class="pill ok">✓ Tersimpan</span>':''}</div>`:`<div class="small lock-copy" style="margin-top:12px"><b>Terbuka pada Hari ${d[0]}.</b> Tidak perlu mengerjakannya sekarang.</div>`}</div><div>${doneDay?'✓':unlocked?'○':'🔒'}</div></div>`}).join('')}</div>${ready?'<section class="card hero" style="margin-top:16px"><h2>🎉 Family Digital Blueprint sudah terbuka</h2><p>Blueprint dibuat dari data yang sempat terkumpul. Jika ada hari yang terlewat, lengkapi kapan saja—Blueprint akan ikut diperbarui.</p><button class="primary" onclick="nav(\'blueprint\')">Lihat Family Digital Blueprint</button></section>':''}`;}
 
@@ -252,6 +251,138 @@ function renderAfterScreen(mode='quick'){
 }
 function renderActivity(){renderAfterScreen('quick')}
 
+function periodFromTime(t){
+  if(!t)return '';
+  const h=parseInt(t.split(':')[0],10);
+  if(h<11)return 'Pagi'; if(h<15)return 'Siang'; if(h<18)return 'Sore'; return 'Malam';
+}
+function addLog(form){
+  const fd=new FormData(form),time=String(fd.get('time')||''),period=periodFromTime(time)||'Tidak tercatat';
+  state.logs.unshift({
+    date:new Date().toISOString().slice(0,10),time,period,
+    planned:+fd.get('planned')||0,actual:+fd.get('actual')||0,
+    content:String(fd.get('content')||''),warning:String(fd.get('warning')||''),
+    conflict:String(fd.get('conflict')||''),after:String(fd.get('after')||''),
+    note:String(fd.get('note')||'')
+  });
+  save();renderLog();setTimeout(()=>toast('✓ Sesi tersimpan. Kalau hari ini ada sesi lain, tambahkan lagi.'),0);
+}
+function pattern(){
+  if(!state.logs.length)return null;
+  const logs=state.logs;
+  const avgAct=Math.round(logs.reduce((s,l)=>s+(+l.actual||0),0)/logs.length);
+  const avgPlan=Math.round(logs.reduce((s,l)=>s+(+l.planned||0),0)/logs.length);
+  const conflicts={};
+  logs.filter(l=>l.conflict&&l.conflict!=='Tidak').forEach(l=>conflicts[l.period||'Tidak tercatat']=(conflicts[l.period||'Tidak tercatat']||0)+1);
+  const risk=Object.entries(conflicts).sort((a,b)=>b[1]-a[1])[0];
+  const acts={};logs.filter(l=>l.after).forEach(l=>acts[l.after]=(acts[l.after]||0)+1);
+  const fav=Object.entries(acts).sort((a,b)=>b[1]-a[1])[0];
+  const warns=logs.filter(l=>l.warning==='Ya'),noWarn=logs.filter(l=>l.warning==='Tidak');
+  return {avgAct,avgPlan,risk:risk&&risk[0],fav:fav&&fav[0],warns:warns.length,warnConflict:warns.filter(l=>l.conflict!=='Tidak').length,noWarn:noWarn.length,noWarnConflict:noWarn.filter(l=>l.conflict!=='Tidak').length};
+}
+function patternHTML(compact=false){
+  const p=pattern();
+  if(!p)return '<section class="card" '+(compact?'style="margin-top:16px"':'')+'><h2>Pola Keluarga</h2><p class="sub">Belum cukup catatan. Catat setiap sesi secara terpisah agar pola waktu dan transisi bisa terlihat.</p></section>';
+  const rows=[
+    'Rata-rata aktual '+p.avgAct+' menit dibanding rencana '+p.avgPlan+' menit.',
+    p.risk?'Waktu konflik paling sering pada catatan saat ini: '+p.risk+'.':null,
+    p.fav?'Aktivitas setelah layar yang paling sering dicatat: '+p.fav+'.':null,
+    p.warns?'Dengan warning: '+p.warnConflict+' konflik dari '+p.warns+' sesi.':null,
+    p.noWarn?'Tanpa warning: '+p.noWarnConflict+' konflik dari '+p.noWarn+' sesi.':null
+  ].filter(Boolean);
+  return '<section class="card" '+(compact?'style="margin-top:16px"':'')+'><div class="row space"><h2>Pola yang terlihat</h2><button class="ghost ai-visible" onclick="openAI(\'review\',\'gemini\')">✨ Baca pola dengan AI</button></div>'+rows.map(r=>'<div class="stat" style="margin-top:8px">'+esc(r)+'</div>').join('')+'<div class="small" style="margin-top:10px">Deskriptif berdasarkan catatan keluarga; tidak membuktikan sebab-akibat.</div></section>';
+}
+function todaySessionSummary(){
+  const date=new Date().toISOString().slice(0,10),ls=state.logs.filter(l=>l.date===date);
+  return {ls,total:ls.reduce((s,l)=>s+(+l.actual||0),0),warn:ls.filter(l=>l.warning==='Ya').length,conf:ls.filter(l=>l.conflict&&l.conflict!=='Tidak').length};
+}
+function renderLog(){
+  if(!profileReady())return renderOnboard();
+  const c=state.checkup||{},sum=todaySessionSummary();
+  app.innerHTML=`<div class="row space"><div><h1>Daily Check-In</h1><p class="sub">Satu hari boleh punya beberapa sesi. Simpan tiap sesi terpisah agar pagi, siang, sore, dan malam tidak tercampur.</p></div><button class="ghost ai-visible" onclick="openAI('review','gemini')">✨ Analisis dengan AI</button></div>
+  <div class="grid two"><form class="card" onsubmit="event.preventDefault();addLog(this)"><h2>+ Tambah sesi hari ini</h2><div class="grid two"><div><label>Jam mulai</label><input name="time" type="time" required></div><div><label>Rencana (menit)</label><input name="planned" type="number" value="${c.target||''}"></div><div><label>Aktual (menit)</label><input name="actual" type="number" required></div><div><label>Ada warning?</label><select name="warning"><option>Ya</option><option>Tidak</option></select></div><div><label>Ada konflik/protes?</label><select name="conflict"><option>Tidak</option><option>Ringan</option><option>Besar</option></select></div><div><label>Konten</label><input name="content" placeholder="Nama video/game"></div></div><label>Aktivitas setelah layar</label><input name="after" placeholder="Contoh: cari warna, siram tanaman"><label>Catatan singkat</label><textarea name="note" placeholder="Apa yang bekerja / tidak bekerja?"></textarea><button class="primary">Simpan Sesi</button></form>
+  <section class="card daily-summary"><div class="label">Ringkasan hari ini</div><div class="session-metrics"><div><b>${sum.ls.length}</b><span>sesi</span></div><div><b>${sum.total}</b><span>menit total</span></div><div><b>${sum.warn}</b><span>pakai warning</span></div><div><b>${sum.conf}</b><span>ada konflik</span></div></div><p class="small">Kalau anak menonton pagi, siang, dan malam, simpan tiga sesi. Jangan digabung menjadi satu.</p>${sum.ls.length?'<div class="session-list">'+sum.ls.map(l=>'<div><b>'+esc(l.time||l.period)+'</b><span>'+esc(l.period)+' • '+l.actual+' mnt • konflik '+esc(l.conflict)+'</span></div>').join('')+'</div>':''}</section></div>
+  ${patternHTML()}
+  <section class="card" style="margin-top:16px"><h2>Riwayat sesi</h2>${state.logs.length?`<table><thead><tr><th>Tanggal/Jam</th><th>Rencana/Aktual</th><th>Waktu</th><th>Warning</th><th>Konflik</th><th>Sesudah</th></tr></thead><tbody>${state.logs.map(l=>`<tr><td>${esc(l.date)} ${esc(l.time||'')}</td><td>${l.planned}/${l.actual} mnt</td><td>${esc(l.period)}</td><td>${esc(l.warning)}</td><td>${esc(l.conflict)}</td><td>${esc(l.after)}</td></tr>`).join('')}</tbody></table>`:'<p class="small">Belum ada sesi.</p>'}</section>`;
+}
+
+function blueprintData(){
+  const p=pattern();
+  const savedW=state.savedWatch.map(id=>D.watch.find(w=>w.id===id)).filter(Boolean);
+  const logActs={};state.logs.filter(l=>l.after).forEach(l=>logActs[l.after]=(logActs[l.after]||0)+1);
+  const topLogActs=Object.entries(logActs).sort((a,b)=>b[1]-a[1]).slice(0,5).map(x=>x[0]);
+  return {p,savedW,acts:[...new Set([...state.savedActivities,...topLogActs])].slice(0,10)};
+}
+function renderBlueprint(){
+  if(!profileReady())return renderOnboard();
+  if(!blueprintReady()){
+    app.innerHTML=`<section class="card hero"><span class="pill warn">Sedang dibangun</span><h1>Family Digital Blueprint</h1><p class="sub">Blueprint terbuka pada hari kalender ke-14 dan terus diperbarui setelahnya.</p><div class="grid two"><div class="card"><h3>Nanti berisi</h3><p>Prioritas keluarga • seluruh masalah yang dipetakan • pola per sesi • strategi transisi • tontonan Indonesia • aktivitas favorit • parent habit • rencana berikutnya.</p></div><div class="card"><h3>Catatan 14 hari</h3><div class="metric">${completedDays()}/14</div><div class="progress"><div style="width:${completedDays()/14*100}%"></div></div></div></div><br><button class="primary" onclick="nav('journey')">Lanjutkan 14 Hari</button></section>`;return;
+  }
+  const {p,savedW,acts}=blueprintData(),rules=(state.journeyNotes[13]||'').split(/\n|;/).filter(Boolean).slice(0,5),next=state.journeyNotes[14]||'Pertahankan satu eksperimen yang realistis dan review setiap minggu.';
+  app.innerHTML=`<div class="row space"><div><span class="pill ok">Blueprint aktif</span><h1>Family Digital Blueprint</h1><p class="sub">Bukan rangkuman mati. Blueprint berubah saat Check-Up, log sesi, dan review mingguan berubah.</p></div><button class="primary" onclick="printBlueprint()">Unduh Blueprint PDF</button></div>
+  <div class="grid two"><section class="card"><h2>1. Fokus keluarga</h2><p><b>${esc(state.profile.name)}</b> • ${state.profile.age} tahun</p><p>${esc(makePlan())}</p></section><section class="card"><h2>2. Masalah yang dipetakan</h2><div class="row">${selectedMoments().map(m=>`<span class="pill gray">${esc(m)}</span>`).join('')||'<span class="small">Belum dipilih</span>'}</div><h3 style="margin-top:12px">Tujuan</h3><div class="row">${selectedGoals().map(g=>`<span class="pill gray">${esc(goalLabel(g))}</span>`).join('')}</div></section></div>
+  <div class="grid two" style="margin-top:16px"><section class="card"><h2>3. Pola sesi</h2>${p?`<p>Rata-rata aktual <b>${p.avgAct} menit</b>; rencana ${p.avgPlan} menit.</p>${p.risk?`<p>Waktu konflik paling sering: <b>${esc(p.risk)}</b>.</p>`:''}`:'<p>Belum cukup log.</p>'}<div class="small">Deskriptif, bukan diagnosis.</div></section><section class="card"><h2>4. Strategi transisi</h2><p>${esc(state.journeyNotes[6]||state.journeyNotes[12]||'Belum ada strategi yang dicatat.')}</p></section></div>
+  <section class="card" style="margin-top:16px"><h2>5. Tontonan tersimpan</h2>${savedW.length?'<div class="grid two">'+savedW.map(w=>'<div class="watch-card"><a target="_blank" href="'+w.url+'">'+esc(w.title)+'</a><div class="small">'+esc(w.language)+' • '+w.age_min+'-'+w.age_max+' tahun</div></div>').join('')+'</div>':'<p>Belum ada tontonan tersimpan.</p>'}</section>
+  <section class="card" style="margin-top:16px"><h2>6. Aktivitas nyata yang cocok</h2>${acts.length?'<div class="row">'+acts.map(a=>'<span class="pill gray">'+esc(a)+'</span>').join('')+'</div>':'<p>Belum ada aktivitas tersimpan/logged.</p>'}</section>
+  <div class="grid two" style="margin-top:16px"><section class="card"><h2>7. Parent digital habit</h2><p>Baseline: <b>${esc(state.checkup.parentHabit||'-')}</b></p><p>${esc(state.journeyNotes[11]||'Belum ada catatan Hari 11.')}</p></section><section class="card"><h2>8. Rencana berikutnya</h2><p>${esc(next)}</p></section></div>
+  <section class="card hero" style="margin-top:16px"><h2>Maintenance Mode</h2><p>Plan → Use → Log → Learn → Adjust.</p><div class="quick-actions"><button class="ghost" onclick="nav('weekly')">🧠 Weekly Review</button><button class="ghost ai-visible" onclick="nav('coach')">✨ AI Family Coach</button><button class="ghost" onclick="nav('after')">🌱 Setelah Layar</button></div></section>`;
+}
+
+function familyContextText(){
+  if(!profileReady())return 'Profil keluarga belum diisi.';
+  const p=pattern(),savedW=state.savedWatch.map(id=>D.watch.find(w=>w.id===id)).filter(Boolean).slice(0,8),notes=Object.entries(state.journeyNotes).filter(([k,v])=>String(v||'').trim()).slice(-6),recent=state.logs.slice(0,12);
+  const goals=selectedGoals(),moments=selectedMoments(),made=new Date().toLocaleString('id-ID');
+  return [
+    'KONTEKS KELUARGA — Gadget Tanpa Drama',
+    'Konteks dibuat dari data hingga: '+made,
+    'Nama/panggilan anak: '+(state.profile.name||'-'),
+    'Usia: '+(state.profile.age||'-')+' tahun',
+    'Caregiver: '+(state.profile.caregiver||'Orang tua'),
+    'Tujuan keluarga: '+(goals.length?goals.map(goalLabel).join(' | '):'-'),
+    'Prioritas minggu ini: '+goalLabel(state.checkup.priorityGoal||state.checkup.goal||goals[0]),
+    'Momen sulit: '+(moments.length?moments.join(' | '):'-'),
+    'Waktu bebas layar: '+(state.checkup.anchor||'-'),
+    'Target saat ini: '+(state.checkup.target||'-')+' menit/hari',
+    'Aktivitas offline yang disukai: '+(state.checkup.fav||'-'),
+    'Kebiasaan HP orang tua: '+(state.checkup.parentHabit||'-'),
+    p?'Pola: rata-rata aktual '+p.avgAct+' menit; rencana '+p.avgPlan+' menit; konflik paling sering '+(p.risk||'belum terlihat')+'.':'Pola: belum cukup log.',
+    'Tontonan tersimpan: '+(savedW.length?savedW.map(w=>w.title).join(' | '):'belum ada'),
+    'Catatan 14 hari terbaru: '+(notes.length?notes.map(([k,v])=>'Hari '+k+': '+v).join(' | '):'belum ada'),
+    'Log sesi terbaru: '+(recent.length?recent.map(l=>l.date+' '+(l.time||l.period)+', '+l.actual+' menit, warning '+l.warning+', konflik '+l.conflict+', sesudah '+(l.after||'-')).join(' | '):'belum ada')
+  ].join('\n');
+}
+function coachPrompt(mode){
+  const guard='Anda adalah AI Family Coach untuk Gadget Tanpa Drama. Gunakan empat prinsip sebagai cara kerja, bukan materi hafalan: batas jelas tanpa mempermalukan; jembatan layar ke pengalaman nyata; ruang eksplorasi; dan respons yang menyoroti usaha, strategi, pilihan, atau kontribusi anak. Gunakan hanya konteks keluarga yang diberikan. Jangan mendiagnosis, jangan menebak akar psikologis, dan jangan menjanjikan perubahan perilaku.';
+  const task={transition:'Anak sedang atau sering sulit berhenti. Berikan satu kalimat sekarang, dua langkah transisi, satu aktivitas nyata, dan hal yang perlu dihindari.',conflict:'Ada konflik/protes saat aturan layar ditegakkan. Berikan respons tegas dan hangat maksimal lima langkah.',plan:'Buat rencana tujuh hari berdasarkan seluruh masalah yang tercatat, tetapi pilih hanya satu eksperimen prioritas.',review:'Ringkas apa yang tampak bekerja dan belum bekerja dari log terbaru. Gunakan bahasa deskriptif seperti “terlihat” dan “pada catatan ini”.'}[mode]||'Bantu memilih langkah berikutnya.';
+  return guard+'\n\n'+familyContextText()+'\n\nTUGAS:\n'+task+'\n\nFormat: Yang terlihat / Fokus sekarang / Yang bisa dilakukan / Kalimat yang bisa dipakai / Jembatan ke pengalaman nyata / Yang perlu diamati berikutnya.';
+}
+async function copyText(t){try{await navigator.clipboard.writeText(t);toast('✓ Konteks terbaru disalin.');return true}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('✓ Konteks terbaru disalin.');return true}}
+function openAI(mode,provider='gemini'){
+  const prompt=coachPrompt(mode);copyText(prompt);
+  setTimeout(()=>window.open(provider==='chatgpt'?'https://chatgpt.com/':'https://gemini.google.com/app','_blank','noopener'),180);
+}
+function openGemini(mode){openAI(mode,'gemini')}
+function renderCoach(){
+  if(!profileReady())return renderOnboard();
+  app.innerHTML=`<div class="row space"><div><span class="pill ai">AI tanpa API key produk</span><h1>AI Family Coach</h1><p class="sub">Konteks dibuat ulang dari data terbaru setiap kali tombol ditekan. Gemini atau ChatGPT tidak menerima pembaruan otomatis setelah tab AI sudah terbuka.</p></div></div>
+  <section class="card hero"><div class="ai-grid">
+  ${[['transition','⏹️ Susah berhenti','Script + transisi'],['conflict','🌪️ Lagi ada konflik','Respons tegas dan hangat'],['review','🔎 Baca pola','Ringkas log terbaru'],['plan','🗓️ Rencana 7 hari','Satu eksperimen prioritas']].map(a=>`<div class="ai-panel"><b>${a[1]}</b><span>${a[2]}</span><div class="row"><button class="primary" onclick="openAI('${a[0]}','gemini')">Gemini</button><button class="ghost" onclick="openAI('${a[0]}','chatgpt')">ChatGPT</button></div></div>`).join('')}</div><div class="notice" style="margin-top:14px"><b>Cara kerja:</b> konteks terbaru disalin ke clipboard, lalu AI pilihan dibuka. Tempelkan konteks di sana.</div></section>
+  <section class="card" style="margin-top:16px"><div class="row space"><h2>Preview konteks terbaru</h2><button class="ghost" onclick="copyText(coachPrompt('review'))">Salin sekarang</button></div><pre class="context-preview">${esc(familyContextText())}</pre></section>`;
+}
+function saveWeeklyReview(form){
+  const fd=new FormData(form),item={date:new Date().toISOString().slice(0,10),worked:String(fd.get('worked')||'').trim(),hard:String(fd.get('hard')||'').trim(),principle:String(fd.get('principle')||'').trim(),experiment:String(fd.get('experiment')||'').trim()};
+  if(!item.worked&&!item.hard&&!item.experiment){toast('Isi minimal satu bagian review.','warn');return}
+  state.maintenance.weeklyReviews=state.maintenance.weeklyReviews||[];state.maintenance.weeklyReviews.unshift(item);state.maintenance.nextExperiment=item.experiment||state.maintenance.nextExperiment||'';save();renderWeekly();setTimeout(()=>toast('✓ Weekly Review tersimpan.'),0);
+}
+function renderWeekly(){
+  if(!profileReady())return renderOnboard();
+  const reviews=state.maintenance.weeklyReviews||[];
+  app.innerHTML=`<div class="row space"><div><span class="pill ok">Maintenance Loop</span><h1>Weekly Family Review</h1><p class="sub">Review data, pilih satu eksperimen, lalu uji lagi minggu berikutnya.</p></div><div class="row"><button class="primary" onclick="openAI('review','gemini')">✨ Gemini</button><button class="ghost" onclick="openAI('review','chatgpt')">ChatGPT</button></div></div>
+  ${patternHTML(true)}
+  <form class="card" style="margin-top:16px" onsubmit="event.preventDefault();saveWeeklyReview(this)"><h2>Review minggu ini</h2><label>Apa yang terasa bekerja?</label><textarea name="worked"></textarea><label>Apa yang masih sulit?</label><textarea name="hard"></textarea><label>Prinsip yang ingin dilatih lewat tindakan minggu depan</label><select name="principle"><option>Tegas tanpa reaktif</option><option>Teknologi → pengalaman nyata</option><option>Eksplorasi</option><option>Rasa mampu</option></select><label>Satu eksperimen 7 hari</label><textarea name="experiment" placeholder="Contoh: warning 5 menit + aktivitas pilihan sudah siap sebelum sesi dimulai"></textarea><button class="primary">Simpan Review</button></form>
+  <section class="card" style="margin-top:16px"><h2>Riwayat</h2>${reviews.length?reviews.map(r=>`<div class="weekly-item"><b>${esc(r.date)}</b><p><b>Bekerja:</b> ${esc(r.worked||'-')}</p><p><b>Sulit:</b> ${esc(r.hard||'-')}</p><p><b>Fokus tindakan:</b> ${esc(r.principle||'-')}</p><p><b>Eksperimen:</b> ${esc(r.experiment||'-')}</p></div>`).join(''):'<p class="small">Belum ada review.</p>'}</section>`;
+}
+
 function renderExplore(){renderAfterScreen('mission')}
 
 
@@ -259,7 +390,6 @@ function renderSources(){
   const idCount=D.watch.filter(w=>w.language==='Bahasa Indonesia').length;
   app.innerHTML=`<h1>Sumber & Batasan</h1><p class="sub">Produk edukatif untuk membantu keluarga membangun rutinitas digital. Bukan diagnosis, terapi, atau alat penilaian perkembangan.</p><div class="grid two"><div class="card"><h2>Kurasi tontonan</h2><p>Versi MVP menampilkan <b>Bahasa Indonesia saja</b>. Pilihan ditautkan per watch page, bukan rekomendasi algoritma. Orang tua tetap melakukan preview singkat.</p></div><div class="card"><h2>Library aktif</h2><div class="metric">${idCount}</div><p>video/episode Bahasa Indonesia; data English tidak ditampilkan pada MVP.</p></div></div><section class="card" style="margin-top:16px"><h2>Fondasi microlearning</h2><p>Parenting Starter Lab dirumuskan ulang menjadi skenario interaktif dari materi parenting yang dimiliki pemilik produk, lalu dipadukan dengan sumber pengasuhan/perkembangan yang tercantum di bawah. Tidak memuat salinan video, slide, atau transkrip course.</p></section><section class="card" style="margin-top:16px"><h2>Sumber kerangka</h2><table><thead><tr><th>ID</th><th>Sumber</th><th>Dipakai untuk</th></tr></thead><tbody>${D.sources.map(s=>`<tr><td>${esc(s.id)}</td><td><a href="${s.url}" target="_blank" rel="noopener">${esc(s.name)}</a></td><td>${esc(s.use)}</td></tr>`).join('')}</tbody></table></section><section class="card" style="margin-top:16px"><h2>Batas penggunaan</h2><p>Insight pola hanya merangkum catatan keluarga. Aplikasi tidak menentukan penyebab psikologis, tidak mendiagnosis, dan tidak menjanjikan tantrum atau konflik hilang dalam 14 hari.</p></section>`;
 }
-function safeFileName(
 function safeFileName(s){return String(s||'keluarga').trim().replace(/[^a-z0-9_-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,40)||'keluarga';}
 function backup(){state.meta=state.meta||{};state.meta.lastBackupAt=new Date().toISOString();save();const envelope={magic:BACKUP_MAGIC,version:BACKUP_VERSION,exportedAt:new Date().toISOString(),product:'Gadget Tanpa Drama',state};const blob=new Blob([JSON.stringify(envelope)],{type:'application/octet-stream'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`GTD-${safeFileName(state.profile?.name)}-${new Date().toISOString().slice(0,10)}.gtd`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500);setTimeout(()=>toast('✓ Perjalanan tersimpan. Simpan file ini di tempat yang mudah ditemukan.'),80);}
 function printReport(){if(blueprintReady())return printBlueprint();if(!profileReady()){alert('Isi profil terlebih dahulu.');return;}const done=completedDays();const pp=pattern();const patterns=pp?[`Rata-rata aktual ${pp.avgAct} menit (rencana ${pp.avgPlan} menit).`,pp.risk?`Waktu konflik tertinggi pada catatan saat ini: ${pp.risk}.`:null,pp.fav?`Aktivitas setelah layar yang paling sering dicatat: ${pp.fav}.`:null].filter(Boolean):[];const html=`<!doctype html><html><head><meta charset="utf-8"><title>Laporan Gadget Tanpa Drama</title><style>body{font-family:Arial,sans-serif;color:#1f2937;padding:30px;max-width:850px;margin:auto}h1,h2{color:#3730a3}.box{border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin:14px 0}.small{font-size:12px;color:#6b7280}</style></head><body><h1>Laporan Sementara — Gadget Tanpa Drama</h1><div class="box"><h2>Progress menuju Blueprint</h2><p>${done}/14 hari selesai.</p></div><div class="box"><h2>Family Digital Plan</h2><p>${esc(makePlan())}</p></div><div class="box"><h2>Pola sementara</h2>${patterns.length?'<ul>'+patterns.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'<p>Belum ada cukup data.</p>'}</div><p class="small">Setelah Hari 14, laporan utama berubah menjadi Family Digital Blueprint.</p></body></html>`;const w=window.open('','_blank');w.document.write(html);w.document.close();w.focus();setTimeout(()=>w.print(),250)}
