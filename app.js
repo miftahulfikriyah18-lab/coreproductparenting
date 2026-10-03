@@ -313,7 +313,7 @@ function todaySessionSummary(){
 function renderLog(){
   if(!profileReady())return renderOnboard();
   const c=state.checkup||{},sum=todaySessionSummary();
-  app.innerHTML=`<div class="row space"><div><h1>Daily Check-In</h1><p class="sub">Satu hari boleh punya beberapa sesi. Simpan tiap sesi terpisah agar pagi, siang, sore, dan malam tidak tercampur.</p></div><button class="ghost ai-visible" onclick="openAI('review','gemini')">✨ Analisis dengan AI</button></div>
+  app.innerHTML=`<div class="row space"><div><h1>Daily Check-In</h1><p class="sub">Satu hari boleh punya beberapa sesi. Simpan tiap sesi terpisah agar pagi, siang, sore, dan malam tidak tercampur.</p></div><div class="row"><button class="ghost ai-visible" onclick="openAI('review','gemini')">✨ Analisis • Gemini</button><button class="ghost" onclick="openAI('review','chatgpt')">ChatGPT</button></div></div>
   <div class="grid two"><form class="card" onsubmit="event.preventDefault();addLog(this)"><h2>+ Tambah sesi hari ini</h2><div class="grid two"><div><label>Jam mulai</label><input name="time" type="time" required></div><div><label>Rencana (menit)</label><input name="planned" type="number" value="${c.target||''}"></div><div><label>Aktual (menit)</label><input name="actual" type="number" required></div><div><label>Ada warning?</label><select name="warning"><option>Ya</option><option>Tidak</option></select></div><div><label>Ada konflik/protes?</label><select name="conflict"><option>Tidak</option><option>Ringan</option><option>Besar</option></select></div><div><label>Konten</label><input name="content" placeholder="Nama video/game"></div></div><label>Aktivitas setelah layar</label><input name="after" placeholder="Contoh: cari warna, siram tanaman"><label>Catatan singkat</label><textarea name="note" placeholder="Apa yang bekerja / tidak bekerja?"></textarea><button class="primary">Simpan Sesi</button></form>
   <section class="card daily-summary"><div class="label">Ringkasan hari ini</div><div class="session-metrics"><div><b>${sum.ls.length}</b><span>sesi</span></div><div><b>${sum.total}</b><span>menit total</span></div><div><b>${sum.warn}</b><span>pakai warning</span></div><div><b>${sum.conf}</b><span>ada konflik</span></div></div><p class="small">Kalau anak menonton pagi, siang, dan malam, simpan tiga sesi. Jangan digabung menjadi satu.</p>${sum.ls.length?'<div class="session-list">'+sum.ls.map(l=>'<div><b>'+esc(l.time||l.period)+'</b><span>'+esc(l.period)+' • '+l.actual+' mnt • konflik '+esc(l.conflict)+'</span></div>').join('')+'</div>':''}</section></div>
   ${patternHTML()}
@@ -346,6 +346,8 @@ function familyContextText(){
   if(!profileReady())return 'Profil keluarga belum diisi.';
   const p=pattern(),savedW=state.savedWatch.map(id=>D.watch.find(w=>w.id===id)).filter(Boolean).slice(0,8),notes=Object.entries(state.journeyNotes).filter(([k,v])=>String(v||'').trim()).slice(-6),recent=state.logs.slice(0,12);
   const goals=selectedGoals(),moments=selectedMoments(),made=new Date().toLocaleString('id-ID');
+  const latestCapacity=state.parentChecks&&state.parentChecks[0]?state.parentChecks[0].level:'belum dicatat';
+  const today=todaySessionSummary();
   return [
     'KONTEKS KELUARGA — Gadget Tanpa Drama',
     'Konteks dibuat dari data hingga: '+made,
@@ -356,32 +358,165 @@ function familyContextText(){
     'Prioritas minggu ini: '+goalLabel(state.checkup.priorityGoal||state.checkup.goal||goals[0]),
     'Momen sulit: '+(moments.length?moments.join(' | '):'-'),
     'Waktu bebas layar: '+(state.checkup.anchor||'-'),
+    'Baseline screen time: '+(state.checkup.baseline||'-')+' menit/hari',
     'Target saat ini: '+(state.checkup.target||'-')+' menit/hari',
     'Aktivitas offline yang disukai: '+(state.checkup.fav||'-'),
     'Kebiasaan HP orang tua: '+(state.checkup.parentHabit||'-'),
-    p?'Pola: rata-rata aktual '+p.avgAct+' menit; rencana '+p.avgPlan+' menit; konflik paling sering '+(p.risk||'belum terlihat')+'.':'Pola: belum cukup log.',
+    'Kapasitas orang tua terbaru: '+latestCapacity,
+    'Progres program: '+completedDays()+'/14 hari tersimpan'+(state.journeyStartedAt?' | hari kalender program: '+currentProgramDay():' | program belum dimulai'),
+    'Ringkasan hari ini: '+today.ls.length+' sesi | '+today.total+' menit | '+today.warn+' pakai warning | '+today.conf+' ada konflik',
+    p?'Pola tercatat: rata-rata aktual '+p.avgAct+' menit; rencana '+p.avgPlan+' menit; konflik paling sering '+(p.risk||'belum terlihat')+'.':'Pola tercatat: belum cukup log.',
     'Tontonan tersimpan: '+(savedW.length?savedW.map(w=>w.title).join(' | '):'belum ada'),
     'Catatan 14 hari terbaru: '+(notes.length?notes.map(([k,v])=>'Hari '+k+': '+v).join(' | '):'belum ada'),
-    'Log sesi terbaru: '+(recent.length?recent.map(l=>l.date+' '+(l.time||l.period)+', '+l.actual+' menit, warning '+l.warning+', konflik '+l.conflict+', sesudah '+(l.after||'-')).join(' | '):'belum ada')
+    'Log sesi terbaru: '+(recent.length?recent.map(l=>l.date+' '+(l.time||l.period)+', '+l.actual+' menit, warning '+l.warning+', konflik '+l.conflict+', konten '+(l.content||'-')+', sesudah '+(l.after||'-')+', catatan '+(l.note||'-')).join(' | '):'belum ada')
   ].join('\n');
 }
-function coachPrompt(mode){
-  const guard='Anda adalah AI Family Coach untuk Gadget Tanpa Drama. Gunakan empat prinsip sebagai cara kerja, bukan materi hafalan: batas jelas tanpa mempermalukan; jembatan layar ke pengalaman nyata; ruang eksplorasi; dan respons yang menyoroti usaha, strategi, pilihan, atau kontribusi anak. Gunakan hanya konteks keluarga yang diberikan. Jangan mendiagnosis, jangan menebak akar psikologis, dan jangan menjanjikan perubahan perilaku.';
-  const task={transition:'Anak sedang atau sering sulit berhenti. Berikan satu kalimat sekarang, dua langkah transisi, satu aktivitas nyata, dan hal yang perlu dihindari.',conflict:'Ada konflik/protes saat aturan layar ditegakkan. Berikan respons tegas dan hangat maksimal lima langkah.',plan:'Buat rencana tujuh hari berdasarkan seluruh masalah yang tercatat, tetapi pilih hanya satu eksperimen prioritas.',review:'Ringkas apa yang tampak bekerja dan belum bekerja dari log terbaru. Gunakan bahasa deskriptif seperti “terlihat” dan “pada catatan ini”.'}[mode]||'Bantu memilih langkah berikutnya.';
-  return guard+'\n\n'+familyContextText()+'\n\nTUGAS:\n'+task+'\n\nFormat: Yang terlihat / Fokus sekarang / Yang bisa dilakukan / Kalimat yang bisa dipakai / Jembatan ke pengalaman nyata / Yang perlu diamati berikutnya.';
+function aiPromptSpec(mode){
+  const specs={
+    transition:{
+      title:'Susah berhenti',
+      purpose:'Membantu caregiver menutup sesi layar yang sedang/sering sulit dihentikan dengan batas yang jelas, bahasa yang sesuai usia, dan jembatan konkret ke aktivitas berikutnya.',
+      instructions:[
+        'Gunakan usia anak, momen sulit, prioritas keluarga, aktivitas yang disukai, dan log terbaru. Jangan mengarang data yang belum tercatat.',
+        'Jika data log belum cukup, katakan secara eksplisit bahwa saran awal terutama berasal dari Check-Up, bukan pola yang sudah terbukti pada keluarga ini.',
+        'Buat bahasa yang bisa langsung diucapkan caregiver. Untuk anak usia 3–5 tahun, gunakan kalimat sangat singkat dan pilihan maksimal dua.',
+        'Pertahankan batas yang sudah disepakati; jangan menyarankan menambah video hanya untuk menghentikan protes.',
+        'Pilih aktivitas setelah layar yang realistis dari konteks. Jika belum ada, beri dua opsi sederhana sesuai usia.'
+      ],
+      output:[
+        '1. Yang terlihat dari data keluarga — maksimal 3 poin.',
+        '2. Kalimat yang bisa diucapkan SEKARANG — 1–2 kalimat, tulis dalam tanda kutip.',
+        '3. Tiga langkah transisi untuk 5–10 menit berikutnya.',
+        '4. Dua pilihan aktivitas nyata setelah layar.',
+        '5. Yang sebaiknya dihindari — maksimal 3 poin.',
+        '6. Tiga hal yang perlu dicatat pada sesi berikutnya agar kita tahu apakah strategi ini membantu.'
+      ]
+    },
+    conflict:{
+      title:'Lagi ada konflik',
+      purpose:'Membantu caregiver menangani protes/konflik saat aturan layar ditegakkan tanpa mempermalukan anak, tanpa melepaskan batas secara impulsif, dan dengan keselamatan sebagai prioritas.',
+      instructions:[
+        'Bedakan antara protes ringan, konflik besar, dan perilaku yang berisiko melukai. Jangan memberi label psikologis.',
+        'Gunakan hanya data yang ada. Jangan menebak bahwa perilaku disebabkan trauma, kecanduan, attachment, ADHD, atau diagnosis lain.',
+        'Berikan respons yang bisa dilakukan saat konflik berlangsung, lalu langkah repair setelah suasana lebih tenang.',
+        'Jika konteks menyebut melempar, memukul, atau risiko keselamatan, prioritaskan pengamanan benda/tubuh dan kalimat batas keselamatan yang singkat.',
+        'Jangan membuat caregiver berdebat panjang dengan anak saat emosi sedang tinggi.'
+      ],
+      output:[
+        '1. Situasi yang terlihat dari konteks — fakta saja.',
+        '2. Prioritas 0–2 menit pertama.',
+        '3. Kalimat tegas-hangat yang bisa diucapkan sekarang.',
+        '4. Langkah setelah anak mulai lebih tenang.',
+        '5. Repair jika caregiver tadi sempat marah/menyerah.',
+        '6. Apa yang perlu dicatat setelah kejadian untuk Weekly Review.'
+      ]
+    },
+    review:{
+      title:'Baca pola',
+      purpose:'Membaca catatan keluarga secara deskriptif untuk menemukan pola yang benar-benar didukung data, menunjukkan bagian yang belum cukup data, dan memilih satu hal yang layak diuji berikutnya.',
+      instructions:[
+        'Mulai dengan menyebut berapa sesi/log yang benar-benar tersedia. Jangan menyebut pola kuat jika datanya terlalu sedikit.',
+        'Bandingkan waktu sesi, durasi, warning, tingkat konflik, konten, dan aktivitas sesudah layar hanya jika datanya tersedia.',
+        'Gunakan bahasa “pada catatan ini”, “terlihat”, “lebih sering tercatat”, atau “belum cukup data”. Jangan menyatakan sebab-akibat.',
+        'Pisahkan temuan data dari saran. Jangan mengisi kekosongan dengan teori umum seolah itu temuan keluarga.',
+        'Pilih satu eksperimen kecil untuk minggu berikutnya yang bisa diukur.'
+      ],
+      output:[
+        '1. Dasar analisis: jumlah sesi, rentang tanggal, dan data apa yang tersedia.',
+        '2. Pola yang cukup didukung data.',
+        '3. Hal yang BELUM bisa disimpulkan karena data kurang.',
+        '4. Apa yang tampak membantu / belum membantu.',
+        '5. Satu eksperimen 7 hari berikutnya.',
+        '6. Ukuran sederhana untuk mengecek hasil eksperimen tersebut.'
+      ]
+    },
+    plan:{
+      title:'Rencana 7 hari',
+      purpose:'Membuat eksperimen tujuh hari yang sederhana berdasarkan prioritas keluarga saat ini—bukan merombak seluruh kebiasaan sekaligus.',
+      instructions:[
+        'Gunakan seluruh masalah yang tercatat sebagai konteks, tetapi pilih hanya SATU fokus eksperimen utama berdasarkan prioritas minggu ini.',
+        'Rencana harus realistis untuk usia anak dan kapasitas caregiver terbaru.',
+        'Gunakan data log jika ada; jika belum cukup, tandai rencana sebagai percobaan awal.',
+        'Sertakan batas layar, warning/transisi, satu jembatan ke aktivitas nyata, dan apa yang perlu dicatat.',
+        'Jangan membuat target klinis atau menjanjikan konflik akan hilang.'
+      ],
+      output:[
+        '1. Fokus eksperimen minggu ini — satu kalimat.',
+        '2. Kenapa fokus ini dipilih dari konteks keluarga.',
+        '3. Aturan sederhana yang akan diuji selama 7 hari.',
+        '4. Rencana Hari 1–7 dalam langkah singkat.',
+        '5. Satu script sebelum layar dan satu script saat berhenti.',
+        '6. Data yang harus dicatat setiap sesi.',
+        '7. Kapan rencana perlu disederhanakan atau diubah.'
+      ]
+    }
+  };
+  return specs[mode]||specs.review;
 }
-async function copyText(t){try{await navigator.clipboard.writeText(t);toast('✓ Konteks terbaru disalin.');return true}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('✓ Konteks terbaru disalin.');return true}}
+function coachPrompt(mode){
+  const spec=aiPromptSpec(mode);
+  return [
+    'PERAN',
+    'Anda adalah AI Family Coach untuk produk Gadget Tanpa Drama. Anda membantu orang tua menerapkan rutinitas digital keluarga secara praktis dan non-klinis.',
+    '',
+    'TUJUAN TUGAS',
+    spec.purpose,
+    '',
+    'PRINSIP KERJA WAJIB',
+    '1. Tegas tanpa reaktif: batas jelas tanpa mempermalukan.',
+    '2. Teknologi → pengalaman nyata: selalu cari jembatan dari layar ke kehidupan nyata.',
+    '3. Eksplorasi: beri ruang anak mengamati, bertanya, mencoba, dan menceritakan.',
+    '4. Rasa mampu: soroti usaha, strategi, pilihan, dan kontribusi anak.',
+    '',
+    'BATASAN',
+    '- Gunakan hanya konteks keluarga di bawah + prinsip pengasuhan umum non-klinis.',
+    '- Jangan mendiagnosis, menebak akar psikologis, atau memberi label kecanduan/ADHD/trauma.',
+    '- Jangan menjanjikan perubahan perilaku atau menyatakan hubungan sebab-akibat dari log keluarga.',
+    '- Jika data tidak cukup, tulis jelas “data belum cukup” dan bedakan saran awal dari temuan data.',
+    '- Jangan memberi jawaban generik yang mengabaikan usia, prioritas, momen sulit, log, dan kapasitas caregiver.',
+    '',
+    familyContextText(),
+    '',
+    'INSTRUKSI KHUSUS — '+spec.title.toUpperCase(),
+    ...spec.instructions.map((v,i)=>(i+1)+'. '+v),
+    '',
+    'OUTPUT WAJIB',
+    ...spec.output,
+    '',
+    'GAYA JAWABAN',
+    '- Bahasa Indonesia yang hangat, konkret, dan singkat.',
+    '- Utamakan kalimat yang benar-benar bisa dipakai orang tua hari ini.',
+    '- Jangan mengulang seluruh konteks keluarga di jawaban.'
+  ].join('\n');
+}
+async function copyText(t){try{await navigator.clipboard.writeText(t);toast('✓ Prompt lengkap + konteks terbaru disalin.');return true}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('✓ Prompt lengkap + konteks terbaru disalin.');return true}}
 function openAI(mode,provider='gemini'){
-  const prompt=coachPrompt(mode);copyText(prompt);
-  setTimeout(()=>window.open(provider==='chatgpt'?'https://chatgpt.com/':'https://gemini.google.com/app','_blank','noopener'),180);
+  const prompt=coachPrompt(mode);
+  window.open(provider==='chatgpt'?'https://chatgpt.com/':'https://gemini.google.com/app','_blank','noopener');
+  copyText(prompt);
 }
 function openGemini(mode){openAI(mode,'gemini')}
+function showCoachPrompt(mode){
+  window.__coachPreviewMode=mode;
+  const pre=document.getElementById('coachPromptPreview'),title=document.getElementById('coachPromptTitle');
+  if(pre)pre.textContent=coachPrompt(mode);
+  if(title)title.textContent='Prompt lengkap — '+aiPromptSpec(mode).title;
+  document.querySelectorAll('[data-prompt-mode]').forEach(b=>b.classList.toggle('active',b.dataset.promptMode===mode));
+}
 function renderCoach(){
   if(!profileReady())return renderOnboard();
-  app.innerHTML=`<div class="row space"><div><span class="pill ai">AI tanpa API key produk</span><h1>AI Family Coach</h1><p class="sub">Konteks dibuat ulang dari data terbaru setiap kali tombol ditekan. Gemini atau ChatGPT tidak menerima pembaruan otomatis setelah tab AI sudah terbuka.</p></div></div>
+  const previewMode=window.__coachPreviewMode||'transition';
+  const cards=[
+    ['transition','⏹️ Susah berhenti','Script + transisi'],
+    ['conflict','🌪️ Lagi ada konflik','Respons tegas dan hangat'],
+    ['review','🔎 Baca pola','Analisis log berdasarkan data'],
+    ['plan','🗓️ Rencana 7 hari','Satu eksperimen prioritas']
+  ];
+  app.innerHTML=`<div class="row space"><div><span class="pill ai">AI tanpa API key produk</span><h1>AI Family Coach</h1><p class="sub">Setiap tombol memakai <b>prompt berbeda</b> dengan tujuan, instruksi, batasan, format output, dan konteks keluarga terbaru. Bukan hanya menyalin konteks.</p></div></div>
   <section class="card hero"><div class="ai-grid">
-  ${[['transition','⏹️ Susah berhenti','Script + transisi'],['conflict','🌪️ Lagi ada konflik','Respons tegas dan hangat'],['review','🔎 Baca pola','Ringkas log terbaru'],['plan','🗓️ Rencana 7 hari','Satu eksperimen prioritas']].map(a=>`<div class="ai-panel"><b>${a[1]}</b><span>${a[2]}</span><div class="row"><button class="primary" onclick="openAI('${a[0]}','gemini')">Gemini</button><button class="ghost" onclick="openAI('${a[0]}','chatgpt')">ChatGPT</button></div></div>`).join('')}</div><div class="notice" style="margin-top:14px"><b>Cara kerja:</b> konteks terbaru disalin ke clipboard, lalu AI pilihan dibuka. Tempelkan konteks di sana.</div></section>
-  <section class="card" style="margin-top:16px"><div class="row space"><h2>Preview konteks terbaru</h2><button class="ghost" onclick="copyText(coachPrompt('review'))">Salin sekarang</button></div><pre class="context-preview">${esc(familyContextText())}</pre></section>`;
+  ${cards.map(a=>`<div class="ai-panel"><b>${a[1]}</b><span>${a[2]}</span><div class="row"><button class="primary" onclick="openAI('${a[0]}','gemini')">Gemini</button><button class="ghost" onclick="openAI('${a[0]}','chatgpt')">ChatGPT</button><button class="ghost prompt-view-btn" data-prompt-mode="${a[0]}" onclick="showCoachPrompt('${a[0]}')">Lihat prompt</button></div></div>`).join('')}</div><div class="notice" style="margin-top:14px"><b>Cara kerja:</b> aplikasi membuat <b>prompt lengkap</b> sesuai tugas yang dipilih + konteks keluarga terbaru, menyalinnya ke clipboard, lalu membuka Gemini/ChatGPT. Tempel prompt itu di AI.</div></section>
+  <section class="card" style="margin-top:16px"><div class="row space"><div><div class="label">Transparansi prompt</div><h2 id="coachPromptTitle">Prompt lengkap — ${esc(aiPromptSpec(previewMode).title)}</h2></div><button class="ghost" onclick="copyText(coachPrompt(window.__coachPreviewMode||'transition'))">Salin prompt ini</button></div><p class="small">Ini adalah teks persis yang disalin saat tombol AI untuk tugas tersebut ditekan.</p><pre id="coachPromptPreview" class="context-preview prompt-preview-full">${esc(coachPrompt(previewMode))}</pre></section>`;
+  setTimeout(()=>showCoachPrompt(previewMode),0);
 }
 function saveWeeklyReview(form){
   const fd=new FormData(form),item={date:new Date().toISOString().slice(0,10),worked:String(fd.get('worked')||'').trim(),hard:String(fd.get('hard')||'').trim(),principle:String(fd.get('principle')||'').trim(),experiment:String(fd.get('experiment')||'').trim()};
